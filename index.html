@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SistemLab</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #38b6f1;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .login-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 320px;
+        }
+        .card {
+            background: #a3a3a3;
+            border-radius: 24px;
+            width: 100%;
+            padding: 28px 24px 32px;
+            color: #fff;
+            text-align: center;
+        }
+        .card h1 {
+                margin: 0 0 8px;
+                font-size: 30px;
+                font-weight: 800;
+        }
+        .card p {
+                margin: 0 0 20px;
+                font-size: 14px;
+                opacity: 0.95;
+        }
+        .field {
+            background: #fff;
+            border-radius: 6px;
+            margin-bottom: 14px;
+        }
+        .field input {
+                width: 100%;
+                border: none;
+                background: transparent;
+                padding: 12px 14px;
+                font-size: 16px;
+                text-align: center;
+                color: #222;
+                outline: none;
+                border-radius: 6px;
+        }
+        .btn-ingresar {
+            margin-top: 16px;
+            width: 100%;
+            background: #a3a3a3;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+            border: none;
+            border-radius: 24px;
+            padding: 14px;
+            cursor: pointer;
+        }
+        .btn-ingresar:hover {
+                background: #8f8f8f;
+        }
+        .error-msg {
+            color: #ffe1e1;
+            background: rgba(255,0,0,0.25);
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrap">
+        <div class="card">
+            <h1>Bienvenido</h1>
+            <p>Favor de ingresar sus datos para acceder.</p>
+
+            <div class="field">
+                <input type="text" id="usuario" placeholder="Usuario" autocomplete="username">
+            </div>
+            <div class="field">
+                <input type="password" id="contrasena" placeholder="Contraseña" autocomplete="current-password">
+            </div>
+
+            <div class="error-msg" id="errorMsg"></div>
+        </div>
+
+        <button class="btn-ingresar" id="btnIngresar">Ingresar</button>
+    </div>
+
+    <script>
+  const btnIngresar = document.getElementById('btnIngresar');
+  const errorMsg = document.getElementById('errorMsg');
+
+  async function login() {
+    const usuario = document.getElementById('usuario').value.trim();
+    const contrasena = document.getElementById('contrasena').value;
+
+    errorMsg.style.display = 'none';
+
+    if (!usuario || !contrasena) {
+      errorMsg.textContent = 'Ingresa usuario y contraseña.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/Auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, contrasena })
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        errorMsg.textContent = data.mensaje || 'Usuario o contraseña incorrectos.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      const data = await response.json();
+
+      sessionStorage.setItem('usuario', data.usuario);
+      sessionStorage.setItem('rol', data.rol);
+
+      window.location.href = '/horario.html';
+    } catch (err) {
+      errorMsg.textContent = 'No se pudo conectar con el servidor.';
+      errorMsg.style.display = 'block';
+    }
+  }
+
+  btnIngresar.addEventListener('click', login);
+
+  document.getElementById('contrasena').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') login();
+  });
+</script>
+
+</body>
+</html>
