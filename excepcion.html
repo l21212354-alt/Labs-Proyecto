@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Excepción</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#38b6f1; font-family:'Segoe UI',Arial,sans-serif; }
+  .card { background:#fff; border-radius:20px; width:680px; overflow:hidden; }
+  .titlebar { background:#a3a3a3; color:#fff; text-align:center; padding:20px; font-size:26px; font-weight:800; }
+  .body { padding:28px 32px; }
+  .row { display:flex; gap:24px; margin-bottom:18px; }
+  .field { flex:1; }
+  .field label { display:block; margin-bottom:6px; font-size:15px; }
+  .field input, .field select { width:100%; padding:10px; border:none; background:#ccd2da; border-radius:6px; font-size:14px; }
+  .motivos { display:flex; gap:14px; margin-bottom:18px; }
+  .motivo-btn { flex:1; background:#b0b8f5; border:none; border-radius:20px; padding:10px; cursor:pointer; font-size:14px; }
+  .motivo-btn.selected { background:#5865f2; color:#fff; }
+  .actions { display:flex; gap:20px; justify-content:center; margin-top:20px; }
+  .btn { border:none; border-radius:20px; padding:12px 30px; font-size:16px; cursor:pointer; }
+  .btn-generar { background:#2ecc71; color:#fff; }
+  .btn-regresar { background:#ffd85e; }
+  .error-msg { color:#c0392b; text-align:center; margin-top:10px; display:none; }
+</style>
+</head>
+<body>
+ 
+<div class="card">
+  <div class="titlebar">Excepción</div>
+  <div class="body">
+    <div class="row">
+      <div class="field">
+        <label>Docente</label>
+        <input type="text" id="docenteClave" placeholder="Clave del docente">
+      </div>
+      <div class="field">
+        <label>Laboratorio</label>
+        <input type="text" id="laboratorioCodigo" disabled>
+      </div>
+    </div>
+ 
+    <div class="row">
+      <div class="field" style="flex:2;">
+        <label>Motivo</label>
+        <div class="motivos" id="motivos">
+          <button type="button" class="motivo-btn" data-valor="Evento">Evento</button>
+          <button type="button" class="motivo-btn" data-valor="Curso Extraordinario">Curso Extraordinario</button>
+          <button type="button" class="motivo-btn" data-valor="Otro">Otro</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Descripción (Opcional)</label>
+        <input type="text" id="descripcion">
+      </div>
+    </div>
+ 
+    <div class="row">
+      <div class="field">
+        <label>Fecha exacta</label>
+        <input type="date" id="fecha">
+      </div>
+      <div class="field">
+        <label>Hora Inicio</label>
+        <input type="time" id="horaInicio">
+      </div>
+      <div class="field">
+        <label>Hora Fin</label>
+        <input type="time" id="horaFin">
+      </div>
+    </div>
+ 
+    <div class="error-msg" id="errorMsg"></div>
+ 
+    <div class="actions">
+      <button class="btn btn-generar" onclick="generar()">Generar Excepción</button>
+      <button class="btn btn-regresar" onclick="regresar()">Regresar</button>
+    </div>
+  </div>
+</div>
+ 
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const labId = params.get('labId');
+ 
+  if (params.get('docenteClave')) document.getElementById('docenteClave').value = params.get('docenteClave');
+  document.getElementById('laboratorioCodigo').value = labId ? `Lab #${labId}` : '';
+ 
+  let motivoSeleccionado = null;
+  document.querySelectorAll('.motivo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.motivo-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      motivoSeleccionado = btn.dataset.valor;
+    });
+  });
+ 
+  function regresar() {
+    window.location.href = `registro-asistencia.html?labId=${labId}`;
+  }
+ 
+  async function generar() {
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.style.display = 'none';
+ 
+    const body = {
+      docenteClave: document.getElementById('docenteClave').value.trim(),
+      laboratorioId: parseInt(labId),
+      motivo: motivoSeleccionado,
+      descripcion: document.getElementById('descripcion').value,
+      fecha: document.getElementById('fecha').value,
+      horaInicio: document.getElementById('horaInicio').value,
+      horaFin: document.getElementById('horaFin').value
+    };
+ 
+    if (!body.docenteClave || !body.motivo || !body.fecha || !body.horaInicio || !body.horaFin) {
+      errorMsg.textContent = 'Completa todos los campos requeridos, incluyendo el motivo.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+ 
+    try {
+      const resp = await fetch('/api/Excepciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+ 
+      if (!resp.ok) throw new Error();
+      regresar();
+    } catch (err) {
+      errorMsg.textContent = 'No se pudo registrar la excepción.';
+      errorMsg.style.display = 'block';
+    }
+  }
+</script>
+ 
+</body>
+</html>
