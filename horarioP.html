@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Horario</title>
+    <style>
+        :root {
+            --azul-fondo: #2fa8ee;
+            --gris-nav: #9aa0a6;
+            --gris-lab: #cdd2d8;
+            --gris-lab-hover: #b9c0c8;
+            --texto-nav: #ffffff;
+            --texto-oscuro: #22282f;
+            --gris-mensaje: #9aa0a6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--azul-fondo);
+            min-height: 100vh;
+        }
+
+        nav.barra-superior {
+            background-color: var(--gris-nav);
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            padding: 18px 32px;
+        }
+
+            nav.barra-superior a {
+                color: var(--texto-nav);
+                text-decoration: none;
+                font-size: 1.25rem;
+                font-weight: 400;
+            }
+
+                nav.barra-superior a.activo {
+                    font-weight: 700;
+                    text-decoration: underline;
+                }
+
+                nav.barra-superior a[hidden] {
+                    display: none;
+                }
+
+        main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 24px 48px;
+        }
+
+        .panel {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 28px 32px 36px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        #mensajeVacio {
+            background-color: var(--gris-mensaje);
+            color: #ffffff;
+            text-align: center;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+            font-size: 1.05rem;
+            display: none;
+        }
+
+            #mensajeVacio.visible {
+                display: block;
+            }
+
+        .grid-laboratorios {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .tarjeta-lab {
+            background-color: var(--gris-lab);
+            border: none;
+            border-radius: 10px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--texto-oscuro);
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.05s ease;
+            padding: 12px;
+            text-align: center;
+        }
+
+            .tarjeta-lab:hover {
+                background-color: var(--gris-lab-hover);
+            }
+
+            .tarjeta-lab:active {
+                transform: translateY(1px);
+            }
+
+            .tarjeta-lab:focus-visible {
+                outline: 3px solid #2fa8ee;
+                outline-offset: 2px;
+            }
+
+        .estado-carga {
+            text-align: center;
+            color: #6b7178;
+            padding: 24px 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="barra-superior">
+        <a href="horario.html" class="activo">Horario</a>
+        <a href="registrar-datos.html" id="navRegistrarDatos">Registrar datos</a>
+        <a href="reporte.html">Reporte</a>
+        <a href="#" id="navSalir">Salir</a>
+    </nav>
+
+    <main>
+        <div class="panel">
+            <div id="mensajeVacio">Sin laboratorios registrados</div>
+            <div id="estadoCarga" class="estado-carga">Cargando laboratorios...</div>
+            <div class="grid-laboratorios" id="gridLaboratorios"></div>
+        </div>
+    </main>
+
+    <script>
+        // --- Control de sesión y rol ---
+        const rol = sessionStorage.getItem('rol');
+        const usuario = sessionStorage.getItem('usuario');
+
+        if (!usuario) {
+            window.location.href = 'index.html';
+        }
+
+        if (rol === 'Visualizador') {
+            document.getElementById('navRegistrarDatos').hidden = true;
+        }
+
+        document.getElementById('navSalir').addEventListener('click', function (e) {
+            e.preventDefault();
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        });
+
+        // --- Carga de laboratorios ---
+        const grid = document.getElementById('gridLaboratorios');
+        const mensajeVacio = document.getElementById('mensajeVacio');
+        const estadoCarga = document.getElementById('estadoCarga');
+
+        // --- SOLO PARA PRUEBAS: laboratorios de ejemplo mientras no hay backend conectado ---
+        // TODO: quitar este arreglo cuando /api/Laboratorios ya responda datos reales.
+        const LABORATORIOS_PRUEBA = [
+            { idLaboratorio: 1, codigoLaboratorio: 'LAB A' },
+            { idLaboratorio: 2, codigoLaboratorio: 'LAB B' },
+            { idLaboratorio: 3, codigoLaboratorio: 'LAB C' },
+            { idLaboratorio: 4, codigoLaboratorio: 'LAB D' },
+            { idLaboratorio: 5, codigoLaboratorio: 'LAB 4' },
+            { idLaboratorio: 6, codigoLaboratorio: 'LAB 5' },
+            { idLaboratorio: 7, codigoLaboratorio: 'LAB REDES' }
+        ];
+
+        function pintarLaboratorios(laboratorios) {
+            estadoCarga.style.display = 'none';
+
+            if (!laboratorios || laboratorios.length === 0) {
+                mensajeVacio.classList.add('visible');
+                return;
+            }
+
+            laboratorios.forEach(function (lab) {
+                const boton = document.createElement('button');
+                boton.className = 'tarjeta-lab';
+                boton.type = 'button';
+                boton.textContent = lab.codigoLaboratorio || lab.codigo || lab.nombre;
+                boton.addEventListener('click', function () {
+                    const idLab = lab.idLaboratorio || lab.id;
+                    window.location.href = 'horario-detalle.html?laboratorio=' + encodeURIComponent(idLab);
+                });
+                grid.appendChild(boton);
+            });
+        }
+
+        async function cargarLaboratorios() {
+            try {
+                const response = await fetch('/api/Laboratorios');
+                if (!response.ok) {
+                    throw new Error('Error al obtener laboratorios');
+                }
+                const laboratorios = await response.json();
+                pintarLaboratorios(laboratorios);
+            } catch (err) {
+                // Backend aún no disponible: usamos datos de ejemplo para poder ver el diseño.
+                pintarLaboratorios(LABORATORIOS_PRUEBA);
+            }
+        }
+
+        cargarLaboratorios();
+    </script>
+</body>
+</html>
