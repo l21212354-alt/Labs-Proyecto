@@ -105,6 +105,15 @@
     <script>
   const btnIngresar = document.getElementById('btnIngresar');
   const errorMsg = document.getElementById('errorMsg');
+        
+  //--- SOLO PARA PRUEBAS: acceso temporal mientras no hay backend conectado ---
+  // Usuario: admin   Contraseña: admin123   -> entra como Administrador
+  // Usuario: visor    Contraseña: visor123   -> entra como Visualizador
+  // NOTA: quitar este bloque cuando el login real (AuthController) esté conectado.
+  const USUARIOS_PRUEBA = {
+    admin: { contrasena: 'admin123', rol: 'Administrador' },
+    visor: { contrasena: 'visor123', rol: 'Visualizador' }
+  };
 
   async function login() {
     const usuario = document.getElementById('usuario').value.trim();
@@ -117,35 +126,43 @@
       errorMsg.style.display = 'block';
       return;
     }
-
+    // Bypass de prueba: si coincide con un usuario quemado, entra sin llamar al backend.
+      const usuarioPrueba = USUARIOS_PRUEBA[usuario.toLowerCase()];
+    if (usuarioPrueba && usuarioPrueba.contrasena === contrasena) {
+      sessionStorage.setItem('usuario', usuario);
+      sessionStorage.setItem('rol', usuarioPrueba.rol);
+      window.location.href = '/horario.html';
+      return;
+    }
+ 
     try {
       const response = await fetch('/api/Auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario, contrasena })
       });
-
+ 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         errorMsg.textContent = data.mensaje || 'Usuario o contraseña incorrectos.';
         errorMsg.style.display = 'block';
         return;
       }
-
+ 
       const data = await response.json();
-
+ 
       sessionStorage.setItem('usuario', data.usuario);
       sessionStorage.setItem('rol', data.rol);
-
+ 
       window.location.href = '/horario.html';
     } catch (err) {
       errorMsg.textContent = 'No se pudo conectar con el servidor.';
       errorMsg.style.display = 'block';
     }
   }
-
+ 
   btnIngresar.addEventListener('click', login);
-
+ 
   document.getElementById('contrasena').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') login();
   });
