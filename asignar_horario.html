@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asignar Horario</title>
+  <style>
+    :root {
+      --azul-fondo: #2fa8ee;
+      --gris-header: #9aa0a6;
+      --gris-input: #d7dae0;
+      --amarillo: #ffe066;
+      --amarillo-hover: #ffd93d;
+      --verde: #16a34a;
+      --verde-hover: #128a3e;
+      --texto-oscuro: #22282f;
+      --error: #e2554d;
+    }
+    * {
+      box-sizing: border-box;
+    }
+ 
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+ 
+    body {
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--azul-fondo);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+    .panel {
+      width: 100%;
+      max-width: 760px;
+      background-color: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+    .panel-header {
+      background-color: var(--gris-header);
+      color: #ffffff;
+      text-align: center;
+      padding: 18px;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .panel-body {
+      padding: 32px 40px 40px;
+    }
+    .mensaje-error {
+      display: none;
+      background-color: rgba(226, 85, 77, 0.12);
+      border: 1px solid var(--error);
+      color: var(--error);
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .mensaje-error.visible {
+      display: block;
+    }
+    .fila-campos {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .campo {
+      flex: 1;
+      min-width: 180px;
+    }
+    .campo.pequeno {
+      flex: 0 0 150px;
+    }
+    .campo label {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 8px;
+      color: var(--texto-oscuro);
+    }
+    .campo select,
+    .campo input {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 6px;
+      border: 1px solid #c3c8cf;
+      background-color: var(--gris-input);
+      font-size: 0.95rem;
+      color: var(--texto-oscuro);
+    }
+    .campo select:focus,
+    .campo input:focus {
+      outline: 2px solid var(--azul-fondo);
+      border-color: var(--azul-fondo);
+    }
+    .campo small.ayuda {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: #6b7178;
+    }
+    .acciones {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 32px;
+    }
+ 
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 13px 40px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+ 
+    .btn-verde {
+      background-color: var(--verde);
+      color: #ffffff;
+    }
+ 
+    .btn-verde:hover {
+      background-color: var(--verde-hover);
+    }
+ 
+    .btn-verde:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+ 
+    .btn-amarillo {
+      background-color: var(--amarillo);
+      color: var(--texto-oscuro);
+    }
+ 
+    .btn-amarillo:hover {
+      background-color: var(--amarillo-hover);
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="panel-header">Asignar Horario</div>
+    <div class="panel-body">
+      <div id="mensajeError" class="mensaje-error" role="alert"></div>
+ 
+      <form id="formAsignar" novalidate>
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="materia">Materia</label>
+            <select id="materia" name="materia" required>
+              <option value="">Selecciona una materia</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="docente">Docente</label>
+            <select id="docente" name="docente" required>
+              <option value="">Selecciona un docente</option>
+            </select>
+          </div>
+        </div>
+ 
+        <div class="fila-campos">
+          <div class="campo pequeno">
+            <label for="clave">Clave</label>
+            <input type="text" id="clave" name="clave" required />
+          </div>
+          <div class="campo">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" name="fecha" required />
+            <small class="ayuda">El día de la semana se calcula automáticamente y el horario se repite cada semana.</small>
+          </div>
+          <div class="campo pequeno">
+            <label for="horaInicio">Hora Inicio</label>
+            <input type="time" id="horaInicio" name="horaInicio" required />
+          </div>
+          <div class="campo pequeno">
+            <label for="horaFin">Hora Fin</label>
+            <input type="time" id="horaFin" name="horaFin" required />
+          </div>
+        </div>
+ 
+        <div class="acciones">
+          <button type="submit" class="btn btn-verde" id="btnRegistrar">Registrar</button>
+          <button type="button" class="btn btn-amarillo" id="btnRegresar">Regresar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+  <script>
+    // --- Sesión y rol ---
+    const usuario = sessionStorage.getItem('usuario');
+    const rol = sessionStorage.getItem('rol');
+ 
+    if (!usuario) {
+      window.location.href = 'index.html';
+    }
+ 
+    if (rol === 'Visualizador') {
+      window.location.href = 'horario.html';
+    }
+ 
+    // --- Parámetros de la URL (llegan desde horario-detalle.html) ---
+    const params = new URLSearchParams(window.location.search);
+    const laboratorioId = params.get('laboratorio');
+    const diaSemanaSugerido = params.get('diaSemana');
+    const horaInicioSugerida = params.get('horaInicio');
+    const horaFinSugerida = params.get('horaFin');
+ 
+    if (!laboratorioId) {
+      window.location.href = 'horario.html';
+    }
+ 
+    if (horaInicioSugerida) {
+      document.getElementById('horaInicio').value = horaInicioSugerida;
+    }
+    if (horaFinSugerida) {
+      document.getElementById('horaFin').value = horaFinSugerida;
+    }
+ 
+    // Si venimos con un día de la semana sugerido, preseleccionamos la fecha
+    // más próxima que caiga en ese día (para que el usuario solo confirme).
+    if (diaSemanaSugerido) {
+      const hoy = new Date();
+      const diaActualIso = hoy.getDay() === 0 ? 7 : hoy.getDay(); // 1=Lunes...7=Domingo
+      const diaObjetivo = parseInt(diaSemanaSugerido, 10);
+      let diferencia = diaObjetivo - diaActualIso;
+      if (diferencia < 0) diferencia += 7;
+      const fechaSugerida = new Date(hoy);
+      fechaSugerida.setDate(hoy.getDate() + diferencia);
+      document.getElementById('fecha').value = fechaSugerida.toISOString().split('T')[0];
+    }
+ 
+    // --- Mensajes de error ---
+    const mensajeError = document.getElementById('mensajeError');
+ 
+    function mostrarError(texto) {
+      mensajeError.textContent = texto;
+      mensajeError.classList.add('visible');
+    }
+ 
+    function ocultarError() {
+      mensajeError.classList.remove('visible');
+      mensajeError.textContent = '';
+    }
+ 
+    // --- Carga de catálogos ---
+    async function cargarMaterias() {
+      const select = document.getElementById('materia');
+      try {
+        const response = await fetch('/api/Materias');
+        if (!response.ok) throw new Error();
+        const materias = await response.json();
+        materias.forEach(function (m) {
+          const opcion = document.createElement('option');
+          opcion.value = m.idMateria || m.id || m.clave;
+          opcion.textContent = m.nombre + (m.clave ? ' (' + m.clave + ')' : '');
+          opcion.dataset.clave = m.clave || '';
+          select.appendChild(opcion);
+        });
+      } catch (err) {
+        mostrarError('No se pudieron cargar las materias.');
+      }
+    }
+ 
+    async function cargarDocentes() {
+      const select = document.getElementById('docente');
+      try {
+        const response = await fetch('/api/Docentes');
+        if (!response.ok) throw new Error();
+        const docentes = await response.json();
+        docentes.forEach(function (d) {
+          const opcion = document.createElement('option');
+          opcion.value = d.idDocente || d.id || d.clave;
+          const nombreCompleto = [d.nombre, d.apellidoPaterno, d.apellidoMaterno].filter(Boolean).join(' ');
+          opcion.textContent = nombreCompleto;
+          select.appendChild(opcion);
+        });
+      } catch (err) {
+        mostrarError('No se pudieron cargar los docentes.');
+      }
+    }
+ 
+    // Autocompletar Clave cuando se elige una materia, si el usuario no la ha escrito.
+    document.getElementById('materia').addEventListener('change', function (e) {
+      const opcionSeleccionada = e.target.selectedOptions[0];
+      const claveInput = document.getElementById('clave');
+      if (opcionSeleccionada && opcionSeleccionada.dataset.clave && !claveInput.value) {
+        claveInput.value = opcionSeleccionada.dataset.clave;
+      }
+    });
+ 
+    // --- Envío del formulario ---
+    const form = document.getElementById('formAsignar');
+    const btnRegistrar = document.getElementById('btnRegistrar');
+ 
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      ocultarError();
+ 
+      const materiaId = document.getElementById('materia').value;
+      const docenteId = document.getElementById('docente').value;
+      const clave = document.getElementById('clave').value.trim();
+      const fecha = document.getElementById('fecha').value;
+      const horaInicio = document.getElementById('horaInicio').value;
+      const horaFin = document.getElementById('horaFin').value;
+ 
+      if (!materiaId || !docenteId || !clave || !fecha || !horaInicio || !horaFin) {
+        mostrarError('Por favor completa todos los campos.');
+        return;
+      }
+ 
+      if (horaFin <= horaInicio) {
+        mostrarError('La hora de fin debe ser posterior a la hora de inicio.');
+        return;
+      }
+ 
+      const payload = {
+        laboratorioId: laboratorioId,
+        materiaId: materiaId,
+        docenteId: docenteId,
+        clave: clave,
+        fecha: fecha,       // el backend deriva DiaSemana a partir de esta fecha
+        horaInicio: horaInicio,
+        horaFin: horaFin
+      };
+ 
+      btnRegistrar.disabled = true;
+      btnRegistrar.textContent = 'Registrando...';
+ 
+      try {
+        const response = await fetch('/api/Horarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+ 
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          mostrarError((data && data.mensaje) || 'No se pudo registrar el horario. Verifica que no exista un cruce.');
+          return;
+        }
+ 
+        window.location.href = 'horario-detalle.html?laboratorio=' + encodeURIComponent(laboratorioId);
+      } catch (err) {
+        mostrarError('No se pudo conectar con el servidor. Intenta de nuevo.');
+      } finally {
+        btnRegistrar.disabled = false;
+        btnRegistrar.textContent = 'Registrar';
+      }
+    });
+ 
+    document.getElementById('btnRegresar').addEventListener('click', function () {
+      window.location.href = 'horario-detalle.html?laboratorio=' + encodeURIComponent(laboratorioId);
+    });
+ 
+    cargarMaterias();
+    cargarDocentes();
+  </script>
+</body>
+</html>
