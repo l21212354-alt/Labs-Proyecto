@@ -191,7 +191,7 @@
                 boton.textContent = lab.codigoLaboratorio || lab.codigo || lab.nombre;
                 boton.addEventListener('click', function () {
                     const idLab = lab.idLaboratorio || lab.id;
-                    window.location.href = 'horario-detalle.html?laboratorio=' + encodeURIComponent(idLab);
+                    window.location.href = 'horarios.html?laboratorio=' + encodeURIComponent(idLab);
                 });
                 grid.appendChild(boton);
             });
